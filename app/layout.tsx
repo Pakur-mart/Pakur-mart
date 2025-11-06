@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import "./globals.css"
-import "./index.css"
+// import "./index.css"
 import Providers from "./providers"
 import { RegisterSW } from "@/components/pwa/register-sw"
 import { Suspense } from "react"
@@ -33,7 +33,8 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Use className instead of inline styles to avoid hydration mismatch */}
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style dangerouslySetInnerHTML={{
+          __html: `
 html {
   font-family: ${GeistSans.style.fontFamily};
   --font-sans: ${GeistSans.variable};

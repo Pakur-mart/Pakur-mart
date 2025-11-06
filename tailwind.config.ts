@@ -1,4 +1,3 @@
-// tailwind.config.ts
 import type { Config } from "tailwindcss"
 
 const config: Config = {
@@ -8,7 +7,6 @@ const config: Config = {
     "./components/**/*.{ts,tsx,js,jsx}",
     "./hooks/**/*.{ts,tsx,js,jsx}",
     "./lib/**/*.{ts,tsx,js,jsx}",
-    // "./**/*.{ts,tsx,js,jsx}"
   ],
   theme: {
     extend: {
@@ -55,7 +53,6 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
 
-      // ✅ Added for glassmorphism
       backdropBlur: {
         xs: "2px",
         sm: "4px",
@@ -79,4 +76,4 @@ const config: Config = {
   ],
 }
 
-export default config
+export default config;
