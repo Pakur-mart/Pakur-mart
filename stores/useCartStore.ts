@@ -39,7 +39,7 @@ export const useCartStore = create<CartState>()(
       try {
         if (!userId) {
           // Guest user - load from localStorage
-          const storedCart = localStorage.getItem('bolpur-mart-guest-cart')
+          const storedCart = localStorage.getItem('pakur-mart-guest-cart')
           const guestItems = storedCart ? JSON.parse(storedCart) : []
           set({
             items: guestItems,
@@ -49,7 +49,7 @@ export const useCartStore = create<CartState>()(
         } else {
           // Logged in user
           // First check if there's a guest cart to merge
-          const guestCart = localStorage.getItem('bolpur-mart-guest-cart')
+          const guestCart = localStorage.getItem('pakur-mart-guest-cart')
           const guestItems = guestCart ? JSON.parse(guestCart) : []
 
           // Load existing user cart
@@ -58,7 +58,7 @@ export const useCartStore = create<CartState>()(
           if (guestItems.length > 0) {
             // Merge guest cart with user cart
             const mergedCart = await FirebaseCartService.mergeGuestCart(userId, guestItems)
-            localStorage.removeItem('bolpur-mart-guest-cart') // Clear guest cart
+            localStorage.removeItem('pakur-mart-guest-cart') // Clear guest cart
             set({
               items: mergedCart,
               loading: false,
@@ -125,7 +125,7 @@ export const useCartStore = create<CartState>()(
             }
 
             // Save to localStorage
-            localStorage.setItem('bolpur-mart-guest-cart', JSON.stringify(newItems))
+            localStorage.setItem('pakur-mart-guest-cart', JSON.stringify(newItems))
             return { items: newItems, loading: false }
           })
         } else {
@@ -176,7 +176,7 @@ export const useCartStore = create<CartState>()(
               newItems[itemIndex].updatedAt = new Date().toISOString()
             }
 
-            localStorage.setItem('bolpur-mart-guest-cart', JSON.stringify(newItems))
+            localStorage.setItem('pakur-mart-guest-cart', JSON.stringify(newItems))
             return { items: newItems, loading: false }
           })
         } else {
@@ -209,7 +209,7 @@ export const useCartStore = create<CartState>()(
         if (!userId) {
           set(state => {
             const newItems = state.items.filter(item => item.id !== cartItemId)
-            localStorage.setItem('bolpur-mart-guest-cart', JSON.stringify(newItems))
+            localStorage.setItem('pakur-mart-guest-cart', JSON.stringify(newItems))
             return { items: newItems, loading: false }
           })
         } else {
@@ -239,7 +239,7 @@ export const useCartStore = create<CartState>()(
 
       try {
         if (!userId) {
-          localStorage.removeItem('bolpur-mart-guest-cart')
+          localStorage.removeItem('pakur-mart-guest-cart')
           set({ items: [], loading: false })
         } else {
           await FirebaseCartService.clearCart(userId)
@@ -263,7 +263,7 @@ export const useCartStore = create<CartState>()(
 
     mergeGuestCart: async (userId) => {
       try {
-        const guestCart = localStorage.getItem('bolpur-mart-guest-cart')
+        const guestCart = localStorage.getItem('pakur-mart-guest-cart')
         if (!guestCart) return
 
         const guestItems = JSON.parse(guestCart)

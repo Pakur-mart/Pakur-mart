@@ -111,9 +111,9 @@ export class FirebaseSettingsService {
     } catch (error) {
       console.error('Error fetching company settings:', error);
       return {
-        companyName: 'Bolpur Mart',
+        companyName: 'Pakur Mart',
         supportPhone: '+91-9876543210',
-        supportEmail: 'support@bolpurmart.com',
+        supportEmail: 'support@pakurmart.com',
         deliveryRadius: 10,
         minOrderAmount: 50,
         maxOrderAmount: 5000,

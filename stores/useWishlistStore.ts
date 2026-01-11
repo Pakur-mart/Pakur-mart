@@ -28,7 +28,7 @@ export const useWishlistStore = create<WishlistState>()(
       try {
         if (!userId) {
           // Guest user - load from localStorage
-          const storedWishlist = localStorage.getItem('bolpur-mart-guest-wishlist')
+          const storedWishlist = localStorage.getItem('pakur-mart-guest-wishlist')
           const guestWishlist = storedWishlist ? JSON.parse(storedWishlist) : []
           set({
             wishlistedProducts: new Set(guestWishlist),
@@ -57,7 +57,7 @@ export const useWishlistStore = create<WishlistState>()(
             const newWishlist = new Set(state.wishlistedProducts)
             newWishlist.add(productId)
 
-            localStorage.setItem('bolpur-mart-guest-wishlist', JSON.stringify([...newWishlist]))
+            localStorage.setItem('pakur-mart-guest-wishlist', JSON.stringify([...newWishlist]))
 
             return {
               wishlistedProducts: newWishlist
@@ -90,7 +90,7 @@ export const useWishlistStore = create<WishlistState>()(
             const newWishlist = new Set(state.wishlistedProducts)
             newWishlist.delete(productId)
 
-            localStorage.setItem('bolpur-mart-guest-wishlist', JSON.stringify([...newWishlist]))
+            localStorage.setItem('pakur-mart-guest-wishlist', JSON.stringify([...newWishlist]))
 
             return {
               wishlistedProducts: newWishlist
