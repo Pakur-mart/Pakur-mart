@@ -141,7 +141,7 @@ export default function Account() {
         toast({
           title: "Help & Support",
           description:
-            "Contact us at support@bolpurmart.com or call +91 98765 43210",
+            "Contact us at support@pakurmart.com or call +91 98765 43210",
         }),
       testId: "help-menu",
       disabled: false,
@@ -284,28 +284,25 @@ export default function Account() {
                 <CardContent className="p-0">
                   <Button
                     variant="ghost"
-                    className={`w-full h-auto p-4 flex items-center justify-between ${
-                      item.disabled ? "cursor-not-allowed opacity-50" : ""
-                    }`}
+                    className={`w-full h-auto p-4 flex items-center justify-between ${item.disabled ? "cursor-not-allowed opacity-50" : ""
+                      }`}
                     onClick={() => !item.disabled && item.action()}
                     disabled={item.disabled}
                     data-testid={item.testId}
                   >
                     <div className="flex items-center space-x-4">
                       <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                          item.disabled
-                            ? "bg-muted text-muted-foreground"
-                            : "bg-primary/10 text-primary hover:bg-primary/20"
-                        }`}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${item.disabled
+                          ? "bg-muted text-muted-foreground"
+                          : "bg-primary/10 text-primary hover:bg-primary/20"
+                          }`}
                       >
                         <item.icon size={20} />
                       </div>
                       <div className="text-left">
                         <h4
-                          className={`font-medium ${
-                            item.disabled ? "text-muted-foreground" : ""
-                          }`}
+                          className={`font-medium ${item.disabled ? "text-muted-foreground" : ""
+                            }`}
                         >
                           {item.title}
                         </h4>
@@ -339,7 +336,7 @@ export default function Account() {
 
           {/* App Info */}
           <div className="text-center text-sm text-muted-foreground space-y-1 mt-4">
-            <p>Bolpur Mart v1.0.0</p>
+            <p>Pakur Mart v1.0.0</p>
             <p>Made with ❤️ for quick commerce</p>
           </div>
         </div>

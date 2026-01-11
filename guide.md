@@ -1,7 +1,7 @@
-# Bolpur Mart - Quick Commerce PWA
+# Pakur Mart - Quick Commerce PWA
 
 ## Project Overview
-A mobile-optimized Progressive Web App (PWA) for Bolpur Mart quick commerce platform with time-based ordering, multi-category products, and Firebase/Cloudinary integration points.
+A mobile-optimized Progressive Web App (PWA) for Pakur Mart quick commerce platform with time-based ordering, multi-category products, and Firebase/Cloudinary integration points.
 
 ### Key Features
 - Time-based ordering rules (Morning: Vegetables | Afternoon: Groceries/Medicine/Snacks | Evening: Biryani/Food)

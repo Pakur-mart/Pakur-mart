@@ -175,7 +175,7 @@ export default function Home() {
               if (city !== "Pakur") break;
             }
 
-            if (city !== "Bolpur") break;
+            if (city !== "Pakur") break;
           }
 
           // Save location to sessionStorage

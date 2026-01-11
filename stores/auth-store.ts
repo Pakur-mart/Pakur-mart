@@ -140,7 +140,7 @@ export const useAuthStore = create<AuthStore>()(
             toast({
               title: "Account created!",
               description:
-                "Welcome to Bolpur Mart. Please check your email to verify your account.",
+                "Welcome to Pakur Mart. Please check your email to verify your account.",
             });
           } catch (error: any) {
             set({
@@ -368,7 +368,7 @@ export const useAuthStore = create<AuthStore>()(
         },
       }),
       {
-        name: "bolpur-mart-auth",
+        name: "pakur-mart-auth",
         partialize: (state) => ({
           user: state.user,
           isAuthenticated: state.isAuthenticated,

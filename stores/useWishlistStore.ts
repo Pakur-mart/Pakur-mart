@@ -22,7 +22,7 @@ export const useWishlistStore = create<WishlistState>()(
 
     init: async (userId) => {
       const state = get()
-      
+
       if (state.initialized) return
 
       try {
@@ -30,17 +30,17 @@ export const useWishlistStore = create<WishlistState>()(
           // Guest user - load from localStorage
           const storedWishlist = localStorage.getItem('bolpur-mart-guest-wishlist')
           const guestWishlist = storedWishlist ? JSON.parse(storedWishlist) : []
-          set({ 
-            wishlistedProducts: new Set(guestWishlist), 
-            initialized: true 
+          set({
+            wishlistedProducts: new Set(guestWishlist),
+            initialized: true
           })
         } else {
           // Logged in user - load from Firebase
           const wishlistItems = await FirebaseWishlistService.getUserWishlist(userId)
           const productIds = wishlistItems.map(item => item.productId)
-          set({ 
-            wishlistedProducts: new Set(productIds), 
-            initialized: true 
+          set({
+            wishlistedProducts: new Set(productIds),
+            initialized: true
           })
         }
       } catch (error) {
@@ -56,17 +56,17 @@ export const useWishlistStore = create<WishlistState>()(
           set(state => {
             const newWishlist = new Set(state.wishlistedProducts)
             newWishlist.add(productId)
-            
+
             localStorage.setItem('bolpur-mart-guest-wishlist', JSON.stringify([...newWishlist]))
-            
-            return { 
+
+            return {
               wishlistedProducts: newWishlist
             }
           })
         } else {
           // Logged in user - save to Firebase
           await FirebaseWishlistService.addToWishlist(userId, productId)
-          
+
           set(state => ({
             wishlistedProducts: new Set([...state.wishlistedProducts, productId])
           }))
@@ -89,17 +89,17 @@ export const useWishlistStore = create<WishlistState>()(
           set(state => {
             const newWishlist = new Set(state.wishlistedProducts)
             newWishlist.delete(productId)
-            
+
             localStorage.setItem('bolpur-mart-guest-wishlist', JSON.stringify([...newWishlist]))
-            
-            return { 
+
+            return {
               wishlistedProducts: newWishlist
             }
           })
         } else {
           // Logged in user - remove from Firebase
           await FirebaseWishlistService.removeFromWishlist(userId, productId)
-          
+
           set(state => {
             const newWishlist = new Set(state.wishlistedProducts)
             newWishlist.delete(productId)
@@ -127,7 +127,7 @@ export const useWishlistStore = create<WishlistState>()(
     clearWishlist: async (userId) => {
       try {
         if (!userId) {
-          localStorage.removeItem('bolpur-mart-guest-wishlist')
+          localStorage.removeItem('pakur-mart-guest-wishlist')
           set({ wishlistedProducts: new Set() })
         } else {
           await FirebaseWishlistService.clearWishlist(userId)

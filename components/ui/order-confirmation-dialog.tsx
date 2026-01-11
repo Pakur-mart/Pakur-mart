@@ -102,14 +102,14 @@ export function OrderConfirmationDialog({
                   {order.orderNumber}
                 </span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Total Amount</span>
                 <span className="font-bold text-lg text-green-800">
                   ₹{formatPrice(order.total)}
                 </span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Payment Method</span>
                 <span className="capitalize font-medium">
@@ -156,7 +156,7 @@ export function OrderConfirmationDialog({
               <Package className="w-4 h-4 mr-2" />
               View My Orders
             </Button>
-            
+
             <Button
               onClick={() => router.push("/")}
               variant="outline"
@@ -169,7 +169,7 @@ export function OrderConfirmationDialog({
           {/* Thank You Message */}
           <div className="mt-6 p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg">
             <p className="text-green-800 font-medium">
-              Thank you for choosing Bolpur Mart! 🛒
+              Thank you for choosing Pakur Mart! 🛒
             </p>
             <p className="text-green-600 text-sm mt-1">
               We'll keep you updated on your order status

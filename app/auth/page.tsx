@@ -8,9 +8,9 @@ export default function LoginPage() {
       {/* Header with Logo and Animation */}
       <div className="flex flex-col items-center pt-8">
         <div>
-          <h1 className="text-3xl font-bold text-center text-foreground">Bolpur Mart</h1>
+          <h1 className="text-3xl font-bold text-center text-foreground">Pakur Mart</h1>
           <p className="text-sm text-muted-foreground text-center mt-1">
-            World-class quick commerce app for groceries, vegetables, fruits, medicine, and food delivery in Bolpur
+            World-class quick commerce app for groceries, vegetables, fruits, medicine, and food delivery in Pakur
           </p>
         </div>
 

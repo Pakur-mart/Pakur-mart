@@ -28,48 +28,48 @@ export const useCartStore = create<CartState>()(
 
     init: async (userId) => {
       const state = get()
-      
+
       // Prevent multiple initializations
       if (state.initialized && state.userId === userId) {
         return
       }
 
       set({ loading: true, userId: userId || null })
-      
+
       try {
         if (!userId) {
           // Guest user - load from localStorage
           const storedCart = localStorage.getItem('bolpur-mart-guest-cart')
           const guestItems = storedCart ? JSON.parse(storedCart) : []
-          set({ 
-            items: guestItems, 
-            loading: false, 
-            initialized: true 
+          set({
+            items: guestItems,
+            loading: false,
+            initialized: true
           })
         } else {
           // Logged in user
           // First check if there's a guest cart to merge
           const guestCart = localStorage.getItem('bolpur-mart-guest-cart')
           const guestItems = guestCart ? JSON.parse(guestCart) : []
-          
+
           // Load existing user cart
           const userCart = await FirebaseCartService.getCart(userId)
-          
+
           if (guestItems.length > 0) {
             // Merge guest cart with user cart
             const mergedCart = await FirebaseCartService.mergeGuestCart(userId, guestItems)
             localStorage.removeItem('bolpur-mart-guest-cart') // Clear guest cart
-            set({ 
-              items: mergedCart, 
-              loading: false, 
-              initialized: true 
+            set({
+              items: mergedCart,
+              loading: false,
+              initialized: true
             })
           } else {
             // No guest cart, just use user cart
-            set({ 
-              items: userCart, 
-              loading: false, 
-              initialized: true 
+            set({
+              items: userCart,
+              loading: false,
+              initialized: true
             })
           }
         }
@@ -86,7 +86,7 @@ export const useCartStore = create<CartState>()(
 
     addItem: async (productId, quantity = 1, variant) => {
       const { userId } = get()
-      
+
       // Validate inputs
       if (!productId || quantity <= 0) {
         toast({
@@ -151,7 +151,7 @@ export const useCartStore = create<CartState>()(
 
     updateQuantity: async (cartItemId, quantity) => {
       const { userId } = get()
-      
+
       if (quantity < 0) {
         return
       }
@@ -164,7 +164,7 @@ export const useCartStore = create<CartState>()(
           set(state => {
             const newItems = [...state.items]
             const itemIndex = newItems.findIndex(item => item.id === cartItemId)
-            
+
             if (itemIndex === -1) {
               return { ...state, loading: false }
             }
@@ -270,9 +270,9 @@ export const useCartStore = create<CartState>()(
         if (guestItems.length === 0) return
 
         const mergedCart = await FirebaseCartService.mergeGuestCart(userId, guestItems)
-        localStorage.removeItem('bolpur-mart-guest-cart')
+        localStorage.removeItem('pakur-mart-guest-cart')
         set({ items: mergedCart })
-        
+
         toast({
           title: "Cart Synced",
           description: "Your cart has been synced successfully."

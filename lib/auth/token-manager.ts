@@ -1,15 +1,15 @@
 // lib/auth/token-manager.ts
 import Cookies from 'js-cookie'
 
-const TOKEN_KEY = 'bolpur_mart_token'
-const REFRESH_TOKEN_KEY = 'bolpur_mart_refresh_token'
-const USER_DATA_KEY = 'bolpur_mart_user'
+const TOKEN_KEY = 'pakur_mart_token'
+const REFRESH_TOKEN_KEY = 'pakur_mart_refresh_token'
+const USER_DATA_KEY = 'pakur_mart_user'
 
 export class TokenManager {
   // Set authentication token with 7-day expiry (regardless of rememberMe)
   static setToken(token: string, rememberMe: boolean = false) {
     const expires = 7 // Always 7 days
-    
+
     Cookies.set(TOKEN_KEY, token, {
       expires,
       secure: process.env.NODE_ENV === 'production',
