@@ -60,7 +60,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [location, setLocation] = useState<LocationState>({
     city: "Pakur",
-    state: "West Bengal",
+    state: "Jharkhand",
     loading: true,
     error: null,
   });
@@ -131,7 +131,7 @@ export default function Home() {
 
         if (data.results && data.results.length > 0) {
           let city = "Pakur";
-          let state = "West Bengal";
+          let state = "Jharkhand";
 
           // Look through all results to find the most specific location
           for (const result of data.results.slice(0, 3)) {
