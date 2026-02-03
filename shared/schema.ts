@@ -37,8 +37,8 @@ export const products = pgTable("products", {
   stock: integer("stock").default(0),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
   reviewCount: integer("review_count").default(0),
-  variants: jsonb("variants").default([]),
   tags: jsonb("tags").default([]),
+  location: text("location"), // Adding location field to support area-based filtering
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -88,37 +88,37 @@ export const recommendations = pgTable("recommendations", {
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
-});
+}) as any;
 
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
-});
+}) as any;
 
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
   createdAt: true,
-});
+}) as any;
 
 export const insertCartSchema = createInsertSchema(cart).omit({
   id: true,
   createdAt: true,
-});
+}) as any;
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+}) as any;
 
 export const insertWishlistSchema = createInsertSchema(wishlists).omit({
   id: true,
   createdAt: true,
-});
+}) as any;
 
 export const insertRecommendationSchema = createInsertSchema(recommendations).omit({
   id: true,
   createdAt: true,
-});
+}) as any;
 
 // Types
 export type User = typeof users.$inferSelect;

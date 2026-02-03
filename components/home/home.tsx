@@ -36,11 +36,13 @@ import {
   Filter,
   Loader2,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTimeSlot } from "@/hooks/use-time-slot";
 import { useAuth } from "@/hooks/use-auth";
 import { FirebaseProductService } from "@/lib/firebase-products";
 import type { Product, CategoryReference } from "@/types";
 import { NotificationBell } from "../ui/notification-bell";
+import { LocationPrompt } from "../ui/location-prompt";
 
 
 interface LocationState {
@@ -59,12 +61,17 @@ export default function Home() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [location, setLocation] = useState<LocationState>({
-    city: "Bolpur",
-    state: "West Bengal",
-    loading: true,
+    city: "",
+    state: "",
+    loading: false,
     error: null,
   });
   const [profileImageError, setProfileImageError] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Infinite scroll states
   const [products, setProducts] = useState<Product[]>([]);
@@ -80,130 +87,14 @@ export default function Home() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement | null>(null);
 
-  // Enhanced location fetching with improved accuracy
-  useEffect(() => {
-    const fetchLocation = async () => {
-      // Check sessionStorage first
-      const storedLocation = sessionStorage.getItem("userLocation");
+  const handleLocationSetAction = (city: string, state: string) => {
+    sessionStorage.setItem("userLocation", JSON.stringify({ city, state }));
+    setLocation({ city, state, loading: false, error: null });
+  };
 
-      if (storedLocation) {
-        const { city, state } = JSON.parse(storedLocation);
-        setLocation({
-          city,
-          state,
-          loading: false,
-          error: null,
-        });
-        return; // Skip API call if data already exists
-      }
+  // Enhanced location fetching logic removed from auto-run to follow "don't put any location before choosing"
+  // But we still want to benefit from it if they click "Live Location" in the prompt.
 
-      if (!navigator.geolocation) {
-        setLocation((prev) => ({
-          ...prev,
-          loading: false,
-          error: "Geolocation not supported",
-        }));
-        return;
-      }
-
-      try {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 15000,
-            enableHighAccuracy: true,
-            maximumAge: 300000, // 5 minutes
-          });
-        });
-
-        const { latitude, longitude } = position.coords;
-
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}&result_type=street_address|sublocality_level_1|sublocality_level_2|locality|administrative_area_level_3`;
-
-        const response = await fetch(geocodeUrl);
-
-        if (!response.ok) {
-          throw new Error(`Geocoding failed with status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.results && data.results.length > 0) {
-          let city = "Bolpur";
-          let state = "West Bengal";
-
-          // Look through all results to find the most specific location
-          for (const result of data.results.slice(0, 3)) {
-            const addressComponents = result.address_components;
-
-            const cityTypes = [
-              "sublocality_level_1",
-              "sublocality_level_2",
-              "sublocality",
-              "locality",
-              "administrative_area_level_3",
-              "administrative_area_level_2",
-              "postal_town",
-              "neighborhood",
-            ];
-
-            // Find state
-            for (const component of addressComponents) {
-              if (component.types.includes("administrative_area_level_1")) {
-                state = component.long_name;
-                break;
-              }
-            }
-
-            // Find city/locality
-            for (const cityType of cityTypes) {
-              for (const component of addressComponents) {
-                if (component.types.includes(cityType)) {
-                  const potentialCity = component.long_name;
-                  if (
-                    potentialCity !== state &&
-                    !potentialCity.includes("Division") &&
-                    !potentialCity.includes("District") &&
-                    potentialCity.length > 2
-                  ) {
-                    city = potentialCity;
-                    break;
-                  }
-                }
-              }
-              if (city !== "Bolpur") break;
-            }
-
-            if (city !== "Bolpur") break;
-          }
-
-          // Save location to sessionStorage
-          sessionStorage.setItem(
-            "userLocation",
-            JSON.stringify({ city, state })
-          );
-
-          setLocation({
-            city,
-            state,
-            loading: false,
-            error: null,
-          });
-        } else {
-          throw new Error("No location data found");
-        }
-      } catch (error: any) {
-        setLocation((prev) => ({
-          ...prev,
-          loading: false,
-          error: `Could not fetch location: ${error.message}`,
-        }));
-      }
-    };
-
-    fetchLocation();
-  }, []);
 
   // Load products with pagination
   const loadProducts = useCallback(async (
@@ -223,7 +114,11 @@ export default function Home() {
     try {
       // For the first page or new search, get all products from Firebase
       if (pageNum === 1 || isNewSearch) {
-        const allProducts = await FirebaseProductService.getProducts(query, category);
+        if (!location.city) {
+          setInitialLoading(false);
+          return;
+        }
+        const allProducts = await FirebaseProductService.getProducts(query, category, location.city);
 
         // Store all products in state for pagination
         setAllProductsCache(allProducts);
@@ -276,7 +171,7 @@ export default function Home() {
     setHasMore(true);
     setInitialLoading(true);
     loadProducts(1, searchQuery, selectedCategory, true);
-  }, [searchQuery, selectedCategory, currentTimeSlot]);
+  }, [searchQuery, selectedCategory, currentTimeSlot, location.city]);
 
   // Intersection Observer for infinite scrolling
   useEffect(() => {
@@ -383,8 +278,15 @@ export default function Home() {
     initCart(actualUserId);
   }, [user, isAuthenticated, initCart]);
 
+  if (!isMounted) return null;
+
   return (
     <div className="mobile-container border">
+      <AnimatePresence>
+        {!location.city && (
+          <LocationPrompt onLocationSetAction={handleLocationSetAction} />
+        )}
+      </AnimatePresence>
       {/* Navigation Header */}
       <header
         className="sticky top-0 z-[100] bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 border-b border-border/50"
@@ -396,7 +298,7 @@ export default function Home() {
               <ShoppingBag className="text-primary-foreground" size={20} />
             </div>
             <div>
-              <h1 className="font-bold text-xl text-foreground">Bolpur Mart</h1>
+              <h1 className="font-bold text-xl text-foreground">Pakur Mart</h1>
               <div className="text-xs text-muted-foreground flex items-center">
                 <MapPin size={12} className="mr-1" />
                 {location.loading ? (

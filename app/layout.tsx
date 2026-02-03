@@ -9,9 +9,8 @@ import { Suspense } from "react"
 import { AuthInitializer } from "@/components/auth/auth-initializer"
 
 export const metadata: Metadata = {
-  title: "Bolpur Mart - Quick Commerce",
-  description:
-    "World-class quick commerce app for groceries, vegetables, fruits, medicine, and food delivery in Bolpur",
+  title: 'Pakur Mart | Fresh Grocery & More',
+  description: 'Order fresh groceries and more from Pakur Mart.',
   generator: "v0.app",
 }
 

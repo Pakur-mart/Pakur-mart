@@ -69,7 +69,7 @@ export async function generateProductRecommendations(
   }
 
   try {
-    const model = ai.getGenerativeModel({ model: "gemini-pro" })
+    const model = (ai as any).getGenerativeModel({ model: "gemini-pro" })
 
     const availableProductsText = request.availableProducts
       .map(
@@ -83,8 +83,8 @@ export async function generateProductRecommendations(
     const purchaseHistoryText =
       request.purchaseHistory.length > 0
         ? request.purchaseHistory
-            .map((order) => `Order: ${JSON.stringify(order)}`)
-            .join("\n")
+          .map((order) => `Order: ${JSON.stringify(order)}`)
+          .join("\n")
         : "No purchase history"
 
     const prompt = `You are a product recommendation system for an e-commerce app. 
@@ -115,7 +115,7 @@ export async function generateProductRecommendations(
 
     try {
       // Extract JSON from the response
-      const jsonMatch = text.match(/\[\s*\{.*\}\s*\]/s)
+      const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/)
       if (jsonMatch) {
         const recommendations = JSON.parse(jsonMatch[0]) as ProductRecommendation[]
         return recommendations.slice(0, 10)
@@ -142,7 +142,7 @@ export async function generateSearchSuggestions(query: string, products: Product
   }
 
   try {
-    const model = ai.getGenerativeModel({ model: "gemini-pro" })
+    const model = (ai as any).getGenerativeModel({ model: "gemini-pro" })
 
     const productsText = products
       .slice(0, 50) // Limit to 50 products to avoid token limits
@@ -165,7 +165,7 @@ export async function generateSearchSuggestions(query: string, products: Product
 
     try {
       // Extract JSON from the response
-      const jsonMatch = text.match(/\[\s*".*"\s*\]/s)
+      const jsonMatch = text.match(/\[\s*"[\s\S]*"\s*\]/)
       if (jsonMatch) {
         const suggestions = JSON.parse(jsonMatch[0]) as string[]
         return suggestions.slice(0, 5)
