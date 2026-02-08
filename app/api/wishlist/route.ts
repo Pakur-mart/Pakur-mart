@@ -3,11 +3,13 @@ import { storage } from "@/lib/storage"
 import { insertWishlistSchema } from "@/shared/schema" // fix schema import path to local shared module
 import { z } from "zod"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
-    
+
     if (!userId) {
       return NextResponse.json(
         { error: "Missing required parameter: userId" },
@@ -45,7 +47,7 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
     const productId = searchParams.get("productId")
-    
+
     if (!userId || !productId) {
       return NextResponse.json(
         { error: "Missing required parameters: userId and productId" },

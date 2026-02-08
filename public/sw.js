@@ -308,7 +308,7 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification('Bolpur Mart', options)
+    self.registration.showNotification('Pakur Mart', options)
   );
 });
 

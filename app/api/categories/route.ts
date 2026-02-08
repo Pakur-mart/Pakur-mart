@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { storage } from "@/lib/storage"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const categories = await storage.getCategories()

@@ -284,7 +284,7 @@ export class FirebaseOrderService {
         },
       };
       console.log("Creating order in Firestore:", firestoreOrder);
-      
+
 
       const docRef = await addDoc(
         collection(db, this.ordersCollection),
@@ -308,25 +308,6 @@ export class FirebaseOrderService {
   static async createOrderNotifications(order: Order): Promise<void> {
     const batch = writeBatch(db);
     const nowISO = new Date().toISOString();
-
-    // Admin notification
-    const adminNotificationRef = doc(
-      collection(db, this.notificationsCollection)
-    );
-    batch.set(adminNotificationRef, {
-      type: "admin_order_placed",
-      title: "New Order Received",
-      message: `New order ${order.orderNumber} placed by ${order.customerName}`,
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      customerName: order.customerName,
-      customerEmail: order.customerEmail,
-      total: order.total,
-      isRead: false,
-      targetAudience: "admin",
-      createdAt: nowISO,
-      priority: "high",
-    });
 
     // Customer notification
     const customerNotificationRef = doc(
@@ -460,6 +441,45 @@ export class FirebaseOrderService {
       }
 
       await updateDoc(doc(db, this.ordersCollection, orderId), updateData);
+
+      // Send notification based on status change
+      if (status === "delivered" || status === "confirmed" || status === "out_for_delivery") {
+        const orderRef = doc(db, this.ordersCollection, orderId);
+        const orderSnap = await getDoc(orderRef);
+
+        if (orderSnap.exists()) {
+          const orderData = orderSnap.data();
+          const notificationsRef = collection(db, this.notificationsCollection);
+
+          let title = "Order Update";
+          let message = `Your order ${orderData.orderNumber} status has been updated to ${status}.`;
+
+          if (status === "confirmed") {
+            title = "Order Confirmed! ✅";
+            message = `Your order ${orderData.orderNumber} has been confirmed and is being prepared.`;
+          } else if (status === "out_for_delivery") {
+            title = "Out for Delivery 🚚";
+            message = `Your order ${orderData.orderNumber} is out for delivery. It will reach you soon!`;
+          } else if (status === "delivered") {
+            title = "Order Delivered! 📦";
+            message = `Your order ${orderData.orderNumber} has been delivered. Enjoy!`;
+          }
+
+          await addDoc(notificationsRef, {
+            type: `customer_order_${status}`,
+            title,
+            message,
+            orderId: orderId,
+            orderNumber: orderData.orderNumber,
+            customerId: orderData.customerId,
+            total: orderData.total,
+            isRead: false,
+            targetAudience: "customer",
+            createdAt: nowISO,
+            priority: "normal",
+          });
+        }
+      }
     } catch (error) {
       console.error("Error updating order status:", error);
       throw error;

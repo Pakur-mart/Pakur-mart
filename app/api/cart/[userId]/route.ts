@@ -1,35 +1,34 @@
-// api/cart/[userId]/[cartItemId]/route.ts
-
-import type { NextApiRequest, NextApiResponse } from "next"
+import { NextResponse } from "next/server"
 import { FirebaseCartService } from "@/lib/firebase-cart-service"
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { userId } = req.query
+export const dynamic = 'force-dynamic'
 
-  if (typeof userId !== "string") {
-    return res.status(400).json({ message: "Invalid userId" })
+export async function GET(_req: Request, { params }: { params: { userId: string } }) {
+  const { userId } = params
+
+  if (!userId) {
+    return NextResponse.json({ message: "Invalid userId" }, { status: 400 })
   }
 
-  switch (req.method) {
-    case "GET": {
-      try {
-        const cart = await FirebaseCartService.getCart(userId)
-        return res.status(200).json(cart)
-      } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch cart" })
-      }
-    }
+  try {
+    const cart = await FirebaseCartService.getCart(userId)
+    return NextResponse.json(cart)
+  } catch (err) {
+    return NextResponse.json({ message: "Failed to fetch cart" }, { status: 500 })
+  }
+}
 
-    case "DELETE": {
-      try {
-        await FirebaseCartService.clearCart(userId)
-        return res.status(200).json({ message: "Cart cleared" })
-      } catch (err) {
-        return res.status(500).json({ message: "Failed to clear cart" })
-      }
-    }
+export async function DELETE(_req: Request, { params }: { params: { userId: string } }) {
+  const { userId } = params
 
-    default:
-      return res.status(405).json({ message: "Method not allowed" })
+  if (!userId) {
+    return NextResponse.json({ message: "Invalid userId" }, { status: 400 })
+  }
+
+  try {
+    await FirebaseCartService.clearCart(userId)
+    return NextResponse.json({ message: "Cart cleared" })
+  } catch (err) {
+    return NextResponse.json({ message: "Failed to clear cart" }, { status: 500 })
   }
 }

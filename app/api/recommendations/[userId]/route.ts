@@ -4,6 +4,8 @@ import type { TimeSlotType } from "@/shared/schema"
 import { storage } from "@/lib/storage"
 import { generateProductRecommendations } from "@/lib/services/gemini"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest, { params }: { params: { userId: string } }) {
   try {
     const timeSlot = (req.nextUrl.searchParams.get("timeSlot") as TimeSlotType) || ("evening" as TimeSlotType)

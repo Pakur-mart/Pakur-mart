@@ -89,10 +89,11 @@ export class FirebaseProductService {
   static async getProducts(
     searchQuery?: string,
     categoryFilter?: string | string[],
-    locationFilter?: string
+    locationFilter?: string,
+    applyLocationFilter: boolean = false
   ): Promise<Product[]> {
     try {
-      console.log("Fetching products...", { searchQuery, categoryFilter });
+      console.log("Fetching products...", { searchQuery, categoryFilter, locationFilter, applyLocationFilter });
 
       // First get time rules
       const timeRules = await this.getTimeRules();
@@ -195,14 +196,15 @@ export class FirebaseProductService {
           }
         }
 
-        // Apply location filter
-        if (locationFilter && locationFilter.trim() !== "") {
+        // Apply location filter ONLY if applyLocationFilter is true
+        if (applyLocationFilter && locationFilter && locationFilter.trim() !== "") {
           const productLocation = (product as any).location;
           if (productLocation && productLocation !== locationFilter) {
-            console.log(`Product ${product.name} filtered out: location mismatch (Product: ${productLocation}, User: ${locationFilter})`);
+            console.log(`Product ${product.name} filtered out: location mismatch`);
             return;
           }
         }
+
 
         console.log(`Product ${product.name} matches all filters`);
         products.push(product);

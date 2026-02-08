@@ -2,6 +2,8 @@ import { generateSearchSuggestions } from "@/lib/services/gemini"
 import { storage } from "@/lib/storage"
 import { NextResponse } from "next/server"
 
+export const dynamic = 'force-dynamic'
+
 
 export async function GET(_req: Request, { params }: { params: { q: string } }) {
   try {

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { storage } from "@/lib/storage";
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(_req: Request, { params }: { params: { userId: string } }) {
   try {
     const orders = await storage.getOrders(params.userId)

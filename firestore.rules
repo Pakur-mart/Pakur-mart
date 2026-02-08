@@ -60,5 +60,11 @@ service cloud.firestore {
     match /settings/{docId} {
       allow read, write: if isRole("admin") || isRole("developer");
     }
+
+    // NOTIFICATIONS
+    match /notifications/{notificationId} {
+      allow read, update: if isSignedIn() && (request.auth.uid == resource.data.customerId || isRole("admin"));
+      allow create: if isSignedIn();
+    }
   }
 }

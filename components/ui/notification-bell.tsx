@@ -210,8 +210,11 @@ export function NotificationBell({
 
   // Detect new notifications and play sound
   useEffect(() => {
+    // If we're initial loading or just initialized, populate the tracking set and skip toasts
     if (!hasInitializedRef.current || isLoading) {
-      notificationIdsRef.current = new Set(notifications.map((n) => n.id));
+      if (notifications.length > 0) {
+        notificationIdsRef.current = new Set(notifications.map((n) => n.id));
+      }
       return;
     }
 
@@ -281,6 +284,9 @@ export function NotificationBell({
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "customer_order_placed":
+      case "customer_order_confirmed":
+      case "customer_order_delivered":
+      case "customer_order_out_for_delivery":
       case "order_update":
         return Package;
       case "offer":
@@ -302,7 +308,12 @@ export function NotificationBell({
   const getNotificationIconColor = (type: string) => {
     switch (type) {
       case "customer_order_placed":
+      case "customer_order_confirmed":
         return "text-green-600";
+      case "customer_order_delivered":
+        return "text-purple-600";
+      case "customer_order_out_for_delivery":
+        return "text-orange-600";
       case "offer":
         return "text-orange-600";
       case "info":
@@ -351,10 +362,12 @@ export function NotificationBell({
       hasInitializedRef.current = true;
     }
 
+    console.log("[NotificationBell] Subscribing for user:", user.uid);
     const unsubscribe =
       FirebaseNotificationService.subscribeToUserNotifications(
         user.uid,
         (newNotifications) => {
+          console.log("[NotificationBell] Received notifications count:", newNotifications.length);
           const limitedNotifications = newNotifications.slice(
             0,
             MAX_NOTIFICATIONS
@@ -373,6 +386,12 @@ export function NotificationBell({
           }
         },
         (error) => {
+          console.error("[NotificationBell] Subscription error details:", error);
+          toast({
+            title: "Notification Error",
+            description: "Failed to connect to notification service. Check console for details.",
+            variant: "destructive",
+          });
           setIsLoading(false);
         }
       );
@@ -530,9 +549,9 @@ export function NotificationBell({
                       className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${getNotificationBackgroundColor(
                         notification
                       )} ${index === displayedNotifications.length - 1 &&
-                          !hasMoreNotifications
-                          ? "border-b-0"
-                          : ""
+                        !hasMoreNotifications
+                        ? "border-b-0"
+                        : ""
                         }`}
                       onClick={() => handleNotificationItemClick(notification)}
                     >
@@ -580,9 +599,9 @@ export function NotificationBell({
                                 {notification.verificationStatus && (
                                   <span
                                     className={`text-xs px-2 py-0.5 rounded-full ${notification.verificationStatus ===
-                                        "verified"
-                                        ? "bg-green-100 text-green-600"
-                                        : "bg-red-100 text-red-600"
+                                      "verified"
+                                      ? "bg-green-100 text-green-600"
+                                      : "bg-red-100 text-red-600"
                                       }`}
                                   >
                                     {notification.verificationStatus}

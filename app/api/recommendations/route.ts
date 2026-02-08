@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { storage } from "@/lib/storage";
 import { generateProductRecommendations } from "@/lib/services/gemini";
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
     const timeSlot = searchParams.get("timeSlot");
-    
+
     if (!userId || !timeSlot) {
       return NextResponse.json(
         { error: "Missing required parameters: userId and timeSlot" },
@@ -15,18 +17,19 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get user's purchase history
-    const purchaseHistory = await storage.getUserPurchaseHistory(userId);
-    
+    // Get user's purchase history - use getOrders and map to items
+    const orders = await storage.getOrders(userId);
+    const purchaseHistory = orders.map(o => o.items);
+
     // Get all products for recommendation processing
     const allProducts = await storage.getProducts();
-    
+
     // Generate recommendations using the Gemini service
     const recommendations = await generateProductRecommendations({
       userId,
-      timeSlot,
+      currentTimeSlot: timeSlot,
       purchaseHistory,
-      allProducts
+      availableProducts: allProducts
     });
 
     return NextResponse.json(recommendations);

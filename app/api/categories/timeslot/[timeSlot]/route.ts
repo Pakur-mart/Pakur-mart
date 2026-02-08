@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { storage } from "@/lib/storage"
 import type { TimeSlotType } from "@/shared/schema"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(_req: Request, { params }: { params: { timeSlot: string } }) {
   try {
     const categories = await storage.getCategoriesByTimeSlot(params.timeSlot as TimeSlotType)

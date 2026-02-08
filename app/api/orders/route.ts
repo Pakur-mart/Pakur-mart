@@ -3,6 +3,8 @@ import { storage } from "@/lib/storage"
 import { insertOrderSchema } from "@/shared/schema" // fix schema import path to local shared module
 import { z } from "zod"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)

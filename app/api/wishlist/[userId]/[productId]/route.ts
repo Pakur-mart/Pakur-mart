@@ -1,6 +1,8 @@
 import { storage } from "@/lib/storage";
 import { NextResponse } from "next/server"
 
+export const dynamic = 'force-dynamic'
+
 export async function DELETE(_req: Request, { params }: { params: { userId: string; productId: string } }) {
   try {
     const ok = await storage.removeFromWishlist(params.userId, params.productId)

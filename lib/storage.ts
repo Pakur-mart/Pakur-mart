@@ -250,7 +250,64 @@ class Storage {
     const ref = doc(db, "orders", id);
     await updateDoc(ref, { status });
     const snap = await getDoc(ref);
-    return { id: snap.id, ...snap.data() } as Order;
+
+    if (snap.exists()) {
+      const orderData = snap.data() as any;
+      console.log(`[Storage] updateOrderStatus called for ${id}. Status received: "${status}". Order: ${orderData.orderNumber}`);
+
+      // Send notification based on status change
+      if (status === "delivered" || status === "confirmed" || status === "out_for_delivery") {
+        try {
+          const notificationsRef = collection(db, "notifications");
+          const nowISO = new Date().toISOString();
+
+          let title = "Order Update";
+          let message = `Your order ${orderData.orderNumber} status has been updated to ${status}.`;
+
+          if (status === "confirmed") {
+            title = "Order Confirmed! ✅";
+            message = `Your order ${orderData.orderNumber} has been confirmed and is being prepared.`;
+          } else if (status === "out_for_delivery") {
+            title = "Out for Delivery 🚚";
+            message = `Your order ${orderData.orderNumber} is out for delivery. It will reach you soon!`;
+          } else if (status === "delivered") {
+            title = "Order Delivered! 📦";
+            message = `Your order ${orderData.orderNumber} has been delivered. Enjoy!`;
+          }
+
+          // Use addDoc directly with the already imported collection function
+          const targetCustomerId = orderData.customerId || orderData.userId;
+
+          if (!targetCustomerId) {
+            console.error("[Storage] No customer ID found for order", orderData.orderNumber);
+          }
+
+          console.log(`[Storage] Creating notification for order ${orderData.orderNumber}, status: ${status}, targetId: ${targetCustomerId}`);
+
+          const notif = await addDoc(notificationsRef, {
+            type: `customer_order_${status}`,
+            title,
+            message,
+            orderId: id,
+            orderNumber: orderData.orderNumber,
+            customerId: targetCustomerId,
+            total: orderData.total,
+            isRead: false,
+            targetAudience: "customer",
+            createdAt: nowISO,
+            priority: "normal",
+          });
+          console.log(`[Storage] Notification created with ID: ${notif.id}`);
+        } catch (error) {
+          console.error("[Storage] Error creating notification in storage service:", error);
+          // Don't fail the order update if notification fails
+        }
+      }
+
+      return { id: snap.id, ...snap.data() } as Order;
+    }
+
+    return undefined;
   }
 
   // Wishlist

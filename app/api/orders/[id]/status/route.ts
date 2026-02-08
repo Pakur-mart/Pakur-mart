@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { storage } from "@/lib/storage";
 
+export const dynamic = 'force-dynamic'
+
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { status } = await req.json()

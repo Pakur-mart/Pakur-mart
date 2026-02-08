@@ -58,6 +58,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [isLocationFilterActive, setIsLocationFilterActive] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [location, setLocation] = useState<LocationState>({
@@ -70,6 +71,23 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    // Check for saved location preference on mount
+    const savedLocation = localStorage.getItem("userLocation");
+    if (savedLocation) {
+      try {
+        const { city, state } = JSON.parse(savedLocation);
+        if (city) {
+          setLocation({
+            city,
+            state: state || "",
+            loading: false,
+            error: null,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to parse saved location:", error);
+      }
+    }
     setIsMounted(true);
   }, []);
 
@@ -88,7 +106,7 @@ export default function Home() {
   const loadingRef = useRef<HTMLDivElement | null>(null);
 
   const handleLocationSetAction = (city: string, state: string) => {
-    sessionStorage.setItem("userLocation", JSON.stringify({ city, state }));
+    localStorage.setItem("userLocation", JSON.stringify({ city, state }));
     setLocation({ city, state, loading: false, error: null });
   };
 
@@ -115,10 +133,13 @@ export default function Home() {
       // For the first page or new search, get all products from Firebase
       if (pageNum === 1 || isNewSearch) {
         if (!location.city) {
-          setInitialLoading(false);
-          return;
+          // Even if no city, we allow fetching if filter is off (which is default now)
+          if (isLocationFilterActive) {
+            setInitialLoading(false);
+            return;
+          }
         }
-        const allProducts = await FirebaseProductService.getProducts(query, category, location.city);
+        const allProducts = await FirebaseProductService.getProducts(query, category, location.city, isLocationFilterActive);
 
         // Store all products in state for pagination
         setAllProductsCache(allProducts);
@@ -171,7 +192,7 @@ export default function Home() {
     setHasMore(true);
     setInitialLoading(true);
     loadProducts(1, searchQuery, selectedCategory, true);
-  }, [searchQuery, selectedCategory, currentTimeSlot, location.city]);
+  }, [searchQuery, selectedCategory, currentTimeSlot, location.city, isLocationFilterActive]);
 
   // Intersection Observer for infinite scrolling
   useEffect(() => {
@@ -258,6 +279,7 @@ export default function Home() {
     setSelectedCategory("");
     setSearchQuery("");
     setShowFilters(false);
+    setIsLocationFilterActive(false);
   };
 
   const selectedCategoryName = availableCategories.find(
@@ -427,7 +449,7 @@ export default function Home() {
                       </p>
                     </div>
                   </div>
-                  {(selectedCategory || searchQuery) && (
+                  {(selectedCategory || searchQuery || isLocationFilterActive) && (
                     <button
                       onClick={clearAllFilters}
                       className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded transition-colors"
@@ -435,6 +457,21 @@ export default function Home() {
                       Clear
                     </button>
                   )}
+                </div>
+              </div>
+
+              <div className="p-3 border-b border-gray-100 bg-blue-50/50">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="locationFilter"
+                    checked={isLocationFilterActive}
+                    onChange={(e) => setIsLocationFilterActive(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="locationFilter" className="text-xs font-medium text-gray-700 cursor-pointer select-none">
+                    Show only products near {location.city || "me"}
+                  </label>
                 </div>
               </div>
 
