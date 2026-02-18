@@ -102,6 +102,12 @@ export class FirebaseProductService {
         return [];
       }
 
+      // Strict Service Area Check: Only Pakur is supported for now
+      if (applyLocationFilter && locationFilter && !locationFilter.toLowerCase().includes("pakur")) {
+        console.log("Strict Service Area Enforcement: Location is not Pakur. Returning zero products.", { locationFilter });
+        return [];
+      }
+
       // Get current time slot
       const currentSlotId = this.getCurrentTimeSlotId(timeRules);
       if (!currentSlotId) {
@@ -198,9 +204,9 @@ export class FirebaseProductService {
 
         // Apply location filter ONLY if applyLocationFilter is true
         if (applyLocationFilter && locationFilter && locationFilter.trim() !== "") {
-          const productLocation = (product as any).location;
-          if (productLocation && productLocation !== locationFilter) {
-            console.log(`Product ${product.name} filtered out: location mismatch`);
+          const productLocation = (product as any).location || "Pakur"; // Treat empty as Pakur
+          if (productLocation.toLowerCase() !== locationFilter.toLowerCase()) {
+            console.log(`Product ${product.name} filtered out: location mismatch (Product: ${productLocation} vs Required: ${locationFilter})`);
             return;
           }
         }
@@ -225,6 +231,8 @@ export class FirebaseProductService {
       if (!timeRules) {
         return [];
       }
+
+
 
       const currentSlotId = this.getCurrentTimeSlotId(timeRules);
       if (!currentSlotId) {

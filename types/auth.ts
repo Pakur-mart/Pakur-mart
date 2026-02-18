@@ -51,6 +51,7 @@ export interface AuthState {
   signinErrors: FormErrors;
   signupErrors: FormErrors;
   generalError: string | null;
+  needsLocationPrompt: boolean;
 }
 
 export interface AuthActions {
@@ -64,10 +65,11 @@ export interface AuthActions {
   signup: (formData: Omit<SignupFormData, "confirmPassword">) => Promise<void>;
   googleAuth: () => Promise<void>;
   signOut: () => Promise<void>;
+  setNeedsLocationPrompt: (value: boolean) => void;
 
   //update actions
   updateUserData: (userData: any) => void;
-  
+
   // Form actions
   setCurrentTab: (tab: "signin" | "signup") => void;
   updateSigninForm: (field: keyof SigninFormData, value: any) => void;

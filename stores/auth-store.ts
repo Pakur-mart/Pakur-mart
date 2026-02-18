@@ -55,8 +55,10 @@ export const useAuthStore = create<AuthStore>()(
         signinErrors: initialFormErrors,
         signupErrors: initialFormErrors,
         generalError: null,
+        needsLocationPrompt: false,
 
         // User actions
+        setNeedsLocationPrompt: (value: boolean) => set({ needsLocationPrompt: value }),
         setUser: (user: AuthUser | null) => {
           set({
             user,
@@ -94,6 +96,7 @@ export const useAuthStore = create<AuthStore>()(
               isAuthenticated: true,
               isSigningIn: false,
               signinForm: initialSigninForm,
+              needsLocationPrompt: true, // Trigger location prompt after login
             });
 
             toast({
@@ -170,6 +173,7 @@ export const useAuthStore = create<AuthStore>()(
               user: userWithData,
               isAuthenticated: true,
               isGoogleAuth: false,
+              needsLocationPrompt: true, // Trigger location prompt after login
             });
 
             toast({
@@ -238,15 +242,15 @@ export const useAuthStore = create<AuthStore>()(
         updateUserData: (userData: any) => {
           const currentUser = get().user;
           if (currentUser) {
-            set({
-              user: {
-                ...currentUser,
-                customData: {
-                  ...currentUser.customData,
-                  ...userData,
-                },
+            const updatedUser = {
+              ...currentUser,
+              customData: {
+                ...currentUser.customData,
+                ...userData,
               },
-            });
+            };
+            set({ user: updatedUser as AuthUser });
+            TokenManager.setUserData(updatedUser.customData);
           }
         },
         updateSigninForm: (field: keyof SigninFormData, value: any) => {
@@ -372,6 +376,7 @@ export const useAuthStore = create<AuthStore>()(
         partialize: (state) => ({
           user: state.user,
           isAuthenticated: state.isAuthenticated,
+          needsLocationPrompt: state.needsLocationPrompt,
         }),
       }
     ),

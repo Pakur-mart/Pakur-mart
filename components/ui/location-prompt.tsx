@@ -20,12 +20,12 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 interface LocationPromptProps {
-    onLocationSetAction: (city: string, state: string) => void;
+    onLocationSetAction: (fullAddress: string, city: string, state: string) => void;
 }
 
 export function LocationPrompt({ onLocationSetAction }: LocationPromptProps) {
     const [loading, setLoading] = useState(false);
-    const [manualCity, setManualCity] = useState("");
+    const [address, setAddress] = useState("");
     const [error, setError] = useState<string | null>(null);
 
     const handleLiveLocation = async () => {
@@ -42,128 +42,187 @@ export function LocationPrompt({ onLocationSetAction }: LocationPromptProps) {
             async (position) => {
                 try {
                     const { latitude, longitude } = position.coords;
+                    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+                    if (!apiKey) {
+                        console.warn("Google Maps API Key missing, using fallback");
+                        setAddress("Pakur Town, Jharkhand");
+                        setLoading(false);
+                        return;
+                    }
 
                     const response = await fetch(
-                        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+                        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
                     );
                     const data = await response.json();
 
-                    if (data.results && data.results.length > 0) {
-                        let city = "Pakur";
-                        let state = "Jharkhand";
+                    if (data.status === "OK" && data.results.length > 0) {
+                        const result = data.results[0];
+                        const fullAddress = result.formatted_address;
+                        setAddress(fullAddress);
 
-                        for (const result of data.results) {
-                            const comps = result.address_components;
-                            const locality = comps.find((c: any) => c.types.includes("locality"));
-                            const adminArea = comps.find((c: any) => c.types.includes("administrative_area_level_1"));
-                            if (locality) city = locality.long_name;
-                            if (adminArea) state = adminArea.long_name;
-                            if (locality) break;
-                        }
+                        // Extract components
+                        const cityComp = result.address_components.find((c: any) =>
+                            c.types.includes("locality") || c.types.includes("administrative_area_level_2")
+                        );
+                        const stateComp = result.address_components.find((c: any) =>
+                            c.types.includes("administrative_area_level_1")
+                        );
 
-                        onLocationSetAction(city, state);
+                        const cityName = cityComp ? cityComp.long_name : "Pakur";
+                        const stateName = stateComp ? stateComp.long_name : "Jharkhand";
+
+                        setCity(cityName);
+                        setRegion(stateName);
                     } else {
-                        setError("Could not determine your location. Please enter it manually.");
+                        console.error("Geocoding failed:", data.status, data.error_message);
+                        setAddress("Pakur, Jharkhand");
+                        setCity("Pakur");
+                        setRegion("Jharkhand");
                     }
-                } catch (err) {
-                    setError("Failed to fetch location details.");
+                } catch (err: any) {
+                    console.error("Live location error:", err);
+                    setError("Failed to fetch address. Please check your internet or GPS.");
                 } finally {
                     setLoading(false);
                 }
             },
             (err) => {
-                setError("Location access denied. Please enter manually.");
+                console.error("Geolocation error:", err);
+                if (err.code === 1) {
+                    setError("Location permission denied. Please allow location access or type manually.");
+                } else {
+                    setError("Could not detect location. Please type manually.");
+                }
                 setLoading(false);
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
     };
 
-    const handleManualSubmit = async (e: React.FormEvent) => {
+    const [city, setCity] = useState("Pakur");
+    const [region, setRegion] = useState("Jharkhand");
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (manualCity.trim().length < 2) {
-            setError("Please enter a valid city name.");
+        if (!address.trim()) {
+            setError("Please enter your delivery address.");
             return;
         }
 
-        onLocationSetAction(manualCity.trim(), "");
+        // If manual entry, try to extract last parts as city/state
+        const parts = address.split(',').map(p => p.trim());
+        let finalCity = city;
+        let finalState = region;
+
+        if (parts.length >= 2) {
+            // Very simple heuristic: last part is state, second to last is city
+            finalState = parts[parts.length - 1];
+            finalCity = parts[parts.length - 2];
+        } else if (parts.length === 1) {
+            finalCity = parts[0];
+        }
+
+        onLocationSetAction(address, finalCity, finalState);
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-background/95 backdrop-blur-md overflow-y-auto">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="w-full max-w-md"
+                className="w-full max-w-2xl"
             >
-                <Card className="shadow-2xl border-primary/20">
-                    <CardHeader className="text-center">
-                        <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                            <MapPin className="text-primary w-6 h-6" />
-                        </div>
-                        <CardTitle className="text-2xl font-bold">Welcome to Pakur Mart</CardTitle>
-                        <CardDescription>
-                            Please select your delivery location to see available products in your area
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <Button
-                            onClick={handleLiveLocation}
-                            disabled={loading}
-                            className="w-full h-12 text-lg font-medium transition-all"
-                        >
-                            {loading ? (
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            ) : (
-                                <Navigation className="mr-2 h-5 w-5" />
-                            )}
-                            {loading ? "Finding location..." : "Use Live Location"}
-                        </Button>
+                <div className="text-center mb-8">
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 border border-primary/20"
+                    >
+                        <MapPin className="text-primary w-8 h-8" />
+                    </motion.div>
+                    <h1 className="text-3xl font-bold tracking-tight mb-2">Delivery Location</h1>
+                    <p className="text-muted-foreground">Select how you want to set your delivery address</p>
+                </div>
 
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
+                <div className="grid md:grid-cols-2 gap-4">
+                    {/* Live Location Section */}
+                    <Card
+                        className={`relative overflow-hidden border-2 transition-all cursor-pointer group hover:border-primary/50 shadow-lg ${loading ? 'opacity-80' : ''}`}
+                        onClick={!loading ? handleLiveLocation : undefined}
+                    >
+                        <CardHeader className="pb-2">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                <Navigation className="w-5 h-5" />
                             </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-background px-2 text-muted-foreground">Or enter manually</span>
-                            </div>
-                        </div>
-
-                        <form onSubmit={handleManualSubmit} className="space-y-4">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                                <Input
-                                    placeholder="Enter your city or area..."
-                                    className="pl-10 h-12"
-                                    value={manualCity}
-                                    onChange={(e) => setManualCity(e.target.value)}
-                                />
-                            </div>
-                            <Button type="submit" variant="secondary" className="w-full h-11">
-                                Set Location
+                            <CardTitle className="text-xl">Live Location</CardTitle>
+                            <CardDescription>Automatically detect your current spot</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                            <Button
+                                variant="secondary"
+                                className="w-full group-hover:bg-primary group-hover:text-primary-foreground"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : null}
+                                {loading ? "Detecting..." : "Use GPS"}
                             </Button>
-                        </form>
+                        </CardContent>
+                    </Card>
 
-                        <AnimatePresence>
-                            {error && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm"
+                    {/* Manual Address Section */}
+                    <Card className="border-2 shadow-lg">
+                        <CardHeader className="pb-2">
+                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center mb-2">
+                                <Search className="w-5 h-5 text-secondary-foreground" />
+                            </div>
+                            <CardTitle className="text-xl">Enter Address</CardTitle>
+                            <CardDescription>Type your full delivery details</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-4">
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <Input
+                                    placeholder="Enter full address..."
+                                    value={address}
+                                    onChange={(e) => {
+                                        setAddress(e.target.value);
+                                        if (error) setError(null);
+                                    }}
+                                    className="h-10 text-sm"
+                                />
+                                <Button
+                                    type="submit"
+                                    className="w-full"
+                                    disabled={!address.trim() || loading}
                                 >
-                                    <AlertCircle className="w-4 h-4" />
-                                    {error}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </CardContent>
-                    <div className="bg-muted/50 py-3 text-center rounded-b-xl border-t">
-                        <p className="text-[10px] text-muted-foreground w-full">
-                            We need your location to show products supported in your area.
-                        </p>
-                    </div>
-                </Card>
+                                    Confirm & Start
+                                </Button>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <AnimatePresence>
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="mt-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-3"
+                        >
+                            <AlertCircle className="w-5 h-5 shrink-0" />
+                            <p>{error}</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <div className="mt-8 text-center">
+                    <p className="text-xs text-muted-foreground bg-muted/30 py-2 px-4 rounded-full inline-block border">
+                        Delivery available across all areas in Pakur
+                    </p>
+                </div>
             </motion.div>
         </div>
     );

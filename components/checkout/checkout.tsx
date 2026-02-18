@@ -156,6 +156,15 @@ export default function Checkout() {
     null
   );
 
+  // Address selection view state
+  const [isChangingAddress, setIsChangingAddress] = useState(false);
+
+  // Get current address object
+  const currentAddr = useMemo(() =>
+    addresses.find((addr: Address) => addr.id === selectedAddress),
+    [addresses, selectedAddress]
+  );
+
   // Keep delivery slots as they were
   const [deliverySlots] = useState<DeliverySlot[]>([
     {
@@ -699,6 +708,7 @@ export default function Checkout() {
     );
   }
 
+
   return (
     <MobileLayout
       title="Checkout"
@@ -727,62 +737,103 @@ export default function Checkout() {
         )}
 
         {/* Delivery Address */}
-        <Card className="mobile-card-hover">
-          <CardHeader className="pb-3">
+        <Card className="mobile-card-hover border-primary/10 shadow-sm">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="flex items-center text-lg">
               <MapPin className="mr-2 text-primary" size={20} />
               Delivery Address
             </CardTitle>
+            {currentAddr && !isChangingAddress && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary h-8 px-2"
+                onClick={() => setIsChangingAddress(true)}
+              >
+                Change
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
-            <RadioGroup
-              value={selectedAddress}
-              onValueChange={setSelectedAddress}
-              className="space-y-3"
-            >
-              {addresses.map((address: Address) => (
-                <div
-                  key={address.id}
-                  className="flex items-start space-x-3 p-3 border border-border rounded-lg mobile-card-hover"
-                >
-                  <RadioGroupItem
-                    value={address.id}
-                    id={address.id}
-                    className="mt-1"
-                  />
-                  <Label htmlFor={address.id} className="flex-1 cursor-pointer">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-medium capitalize">
-                        {address.type}
-                      </span>
-                      {address.isDefault && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-black text-white text-xs"
-                        >
-                          Default
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm font-medium text-foreground mb-1">
-                      {address.receiverName} • {address.receiverPhone}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {address.fullAddress}
-                    </p>
-                  </Label>
+            {currentAddr && !isChangingAddress ? (
+              <div className="p-3 bg-primary/5 rounded-xl border border-primary/10">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-semibold text-sm capitalize flex items-center gap-2">
+                    {currentAddr.type === 'home' ? '🏠 Home' : currentAddr.type === 'work' ? '🏢 Work' : '📍 Other'}
+                    {currentAddr.isDefault && (
+                      <Badge variant="secondary" className="bg-black text-white text-[10px] h-4 px-1">Default</Badge>
+                    )}
+                  </span>
                 </div>
-              ))}
-            </RadioGroup>
+                <p className="text-sm font-medium text-foreground">
+                  {currentAddr.receiverName} • {currentAddr.receiverPhone}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  {currentAddr.fullAddress}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <RadioGroup
+                  value={selectedAddress}
+                  onValueChange={(val) => {
+                    setSelectedAddress(val);
+                    setIsChangingAddress(false);
+                  }}
+                  className="space-y-3"
+                >
+                  {addresses.map((address: Address) => (
+                    <div
+                      key={address.id}
+                      className={`flex items-start space-x-3 p-3 border rounded-lg transition-all ${selectedAddress === address.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border'
+                        }`}
+                    >
+                      <RadioGroupItem
+                        value={address.id}
+                        id={address.id}
+                        className="mt-1"
+                      />
+                      <Label htmlFor={address.id} className="flex-1 cursor-pointer">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className="font-medium capitalize">
+                            {address.type}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium">
+                          {address.receiverName} • {address.receiverPhone}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {address.fullAddress}
+                        </p>
+                        {address.isDefault && (
+                          <Badge variant="outline" className="mt-2 text-[10px]">Current Default</Badge>
+                        )}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
 
-            <Button
-              variant="outline"
-              className="w-full mt-3"
-              onClick={() => (window.location.href = "/addresses")}
-            >
-              <Plus size={16} className="mr-2" />
-              Add New Address
-            </Button>
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-10 text-sm"
+                    onClick={() => (window.location.href = "/addresses")}
+                  >
+                    <Plus size={14} className="mr-2" />
+                    New Address
+                  </Button>
+                  {addresses.length > 0 && isChangingAddress && (
+                    <Button
+                      variant="ghost"
+                      className="h-10 text-sm"
+                      onClick={() => setIsChangingAddress(false)}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

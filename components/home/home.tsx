@@ -39,7 +39,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useTimeSlot } from "@/hooks/use-time-slot";
 import { useAuth } from "@/hooks/use-auth";
+import { useAuthStore } from "@/stores/auth-store";
 import { FirebaseProductService } from "@/lib/firebase-products";
+import { FirebaseAuthService } from "@/lib/firebase-services";
 import type { Product, CategoryReference } from "@/types";
 import { NotificationBell } from "../ui/notification-bell";
 import { LocationPrompt } from "../ui/location-prompt";
@@ -48,13 +50,14 @@ import { LocationPrompt } from "../ui/location-prompt";
 interface LocationState {
   city: string;
   state: string;
+  fullAddress?: string;
   loading: boolean;
   error: string | null;
 }
 
 export default function Home() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, needsLocationPrompt, setNeedsLocationPrompt } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -75,11 +78,12 @@ export default function Home() {
     const savedLocation = localStorage.getItem("userLocation");
     if (savedLocation) {
       try {
-        const { city, state } = JSON.parse(savedLocation);
+        const { city, state, fullAddress } = JSON.parse(savedLocation);
         if (city) {
           setLocation({
             city,
             state: state || "",
+            fullAddress: fullAddress || "",
             loading: false,
             error: null,
           });
@@ -105,9 +109,47 @@ export default function Home() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement | null>(null);
 
-  const handleLocationSetAction = (city: string, state: string) => {
-    localStorage.setItem("userLocation", JSON.stringify({ city, state }));
-    setLocation({ city, state, loading: false, error: null });
+  const handleLocationSetAction = async (fullAddress: string, city: string, state: string) => {
+    // Save to local storage for quick access on next load
+    localStorage.setItem("userLocation", JSON.stringify({ city, state, fullAddress }));
+    setLocation({ city, state, fullAddress, loading: false, error: null });
+    setNeedsLocationPrompt(false);
+
+    // If user is logged in, sync this to their profile as default address
+    if (isAuthenticated && user) {
+      try {
+        const id = Date.now().toString();
+        const newAddress = {
+          id,
+          type: 'home' as const,
+          receiverName: user.displayName || user.customData?.name || 'User',
+          receiverPhone: user.customData?.phone || '',
+          fullAddress: fullAddress,
+          street: fullAddress.split(',')[0] || city,
+          city: city,
+          state: state || 'Jharkhand',
+          pinCode: '000000', // Unknown pin for dynamic locations
+          isDefault: true
+        };
+
+        // 1. Update Firestore
+        await FirebaseAuthService.addAddress(newAddress);
+
+        // 2. Refresh local auth store state immediately
+        const currentAddresses = user.customData?.addresses || [];
+        // Set all others to non-default
+        const updatedAddresses = currentAddresses.map(a => ({ ...a, isDefault: false }));
+        updatedAddresses.push(newAddress);
+
+        // Use the newly added updateUserData action
+        (useAuthStore.getState() as any).updateUserData({
+          addresses: updatedAddresses
+        });
+
+      } catch (error) {
+        console.error("Failed to sync location to user addresses:", error);
+      }
+    }
   };
 
   // Enhanced location fetching logic removed from auto-run to follow "don't put any location before choosing"
@@ -132,12 +174,9 @@ export default function Home() {
     try {
       // For the first page or new search, get all products from Firebase
       if (pageNum === 1 || isNewSearch) {
-        if (!location.city) {
-          // Even if no city, we allow fetching if filter is off (which is default now)
-          if (isLocationFilterActive) {
-            setInitialLoading(false);
-            return;
-          }
+        if (!location.city && isLocationFilterActive) {
+          setInitialLoading(false);
+          return;
         }
         const allProducts = await FirebaseProductService.getProducts(query, category, location.city, isLocationFilterActive);
 
@@ -174,7 +213,7 @@ export default function Home() {
       setIsLoadingMore(false);
       setInitialLoading(false);
     }
-  }, [isLoadingMore, allProductsCache]);
+  }, [isLoadingMore, allProductsCache, location.city, isLocationFilterActive]);
 
   // Original query for categories (keep this)
   const { data: availableCategories = [] } = useQuery<CategoryReference[]>({
@@ -305,7 +344,7 @@ export default function Home() {
   return (
     <div className="mobile-container border">
       <AnimatePresence>
-        {!location.city && (
+        {(!location.city || needsLocationPrompt) && (
           <LocationPrompt onLocationSetAction={handleLocationSetAction} />
         )}
       </AnimatePresence>
@@ -319,21 +358,23 @@ export default function Home() {
             <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
               <ShoppingBag className="text-primary-foreground" size={20} />
             </div>
-            <div>
-              <h1 className="font-bold text-xl text-foreground">Pakur Mart</h1>
-              <div className="text-xs text-muted-foreground flex items-center">
-                <MapPin size={12} className="mr-1" />
+            <div
+              className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setNeedsLocationPrompt(true)}
+            >
+              <h1 className="font-bold text-xl text-foreground leading-tight">Pakur Mart</h1>
+              <div className="text-[10px] text-muted-foreground flex items-center mt-0.5">
+                <MapPin size={10} className="mr-1 text-primary" />
                 {location.loading ? (
                   <div className="flex items-center space-x-1">
-                    <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
-                    <span>,</span>
-                    <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-12 h-2 bg-gray-200 rounded animate-pulse"></div>
                   </div>
                 ) : (
-                  <span>
-                    {location.city}, {location.state}
+                  <span className="truncate max-w-[200px]">
+                    {location.fullAddress || `${location.city}, ${location.state}`}
                   </span>
                 )}
+                <ChevronDown size={10} className="ml-1 opacity-50" />
               </div>
             </div>
           </div>
